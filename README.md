@@ -1,20 +1,16 @@
 ```
- ____  ____       _                    _
-| __ )|  _ \     / \   __ _  ___ _ __ | |_
-|  _ \| | | |   / _ \ / _` |/ _ \ '_ \| __|
-| |_) | |_| |  / ___ \ (_| |  __/ | | | |_
-|____/|____/  /_/   \_\__, |\___|_| |_|\__|
-                      |___/
+ ____  _____ ____   ___
+|  _ \| ____|  _ \ / _ \
+| |_) |  _| | |_) | | | |
+|  __/| |___| |__/| |_| |
+|_|   |_____|_|    \___/
 ```
 
-**Your AI Business Development Agent.**
-Current model: `claude-3-5-sonnet` + `perplexity sonar-pro`
-
-BD Agent learns your business during onboarding, then autonomously finds prospects, tracks competitors, surfaces insights, and prepares outreach — all backed by evidence with source URLs. No hallucinations.
+**Pepo is an autonomous Business Development agent that thinks, plans, and learns as it works.** It finds prospects, tracks competitors, surfaces market insights, scouts partnerships, and prepares outreach — all backed by evidence with source URLs. Think Claude Code, but built just for business development work.
 
 ## What It Does
 
-**On Day 1:** Onboarding — learns your business, ICP, competitors, and positioning.
+**On Day 1:** Onboarding — Pepo learns your business, ICP, competitors, and positioning.
 
 **Every Day After:**
 | Task | What It Does |
@@ -26,15 +22,14 @@ BD Agent learns your business during onboarding, then autonomously finds prospec
 | **Partnership Scouting** | Identifies integration and co-marketing opportunities |
 | **Outreach Prep** | Prepares personalized talking points for top prospects |
 
-**Core principle:** Evidence first. Every claim has a source URL.
+**Core principle:** Evidence first. Every claim has a source URL. No hallucinations.
 
 ---
 
 ## Prerequisites
 
 - **Python** 3.10 or higher
-- **Anthropic API key** ([get here](https://console.anthropic.com/)) — or OpenAI API key
-- **Perplexity API key** ([get here](https://www.perplexity.ai/settings/api)) — for deep research with citations
+- **API keys** (provided during setup)
 
 ### Installing Python
 
@@ -64,7 +59,19 @@ python3 --version
 
 ---
 
-## How to Install
+## Quick Install (one command)
+
+**macOS/Linux:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/abdazzam00/biz-dev-agent/main/install.sh | bash
+```
+
+This will clone the repo, create a virtual environment, install all dependencies, and set up your `.env` file. After it finishes, just add your API keys and run `pepo`.
+
+---
+
+## Manual Install
 
 **1. Clone the repository:**
 
@@ -90,45 +97,31 @@ pip install -e .
 **4. Set up your environment variables:**
 
 ```bash
-# Copy the example environment file
 cp env.example .env
-
 # Edit .env and add your API keys
-# ANTHROPIC_API_KEY=your-anthropic-api-key
-# OPENAI_API_KEY=your-openai-api-key (optional, alternative to Anthropic)
-
-# Required for research
-# PERPLEXITY_API_KEY=your-perplexity-api-key
-
-# Optional: For enhanced enrichment (can add later)
-# APOLLO_API_KEY=your-apollo-api-key
-# CLEARBIT_API_KEY=your-clearbit-api-key
-# HUNTER_API_KEY=your-hunter-api-key
 ```
 
 ---
 
 ## How to Run
 
-Run BD Agent in interactive mode:
+Run Pepo in interactive mode:
 
 ```bash
-bd-agent
+pepo
 ```
 
-On first run, BD Agent walks you through onboarding to learn your business. Then it proposes a daily task plan tailored to your needs.
+On first run, Pepo walks you through onboarding to learn your business. Then it proposes a daily task plan tailored to your needs.
 
 ```
- ____  ____       _                    _
-| __ )|  _ \     / \   __ _  ___ _ __ | |_
-|  _ \| | | |   / _ \ / _` |/ _ \ '_ \| __|
-| |_) | |_| |  / ___ \ (_| |  __/ | | | |_
-|____/|____/  /_/   \_\__, |\___|_| |_|\__|
-                      |___/
+ ____  _____ ____   ___
+|  _ \| ____|  _ \ / _ \
+| |_) |  _| | |_) | | | |
+|  __/| |___| |__/| |_| |
+|_|   |_____|_|    \___/
 
 Your AI Business Development Agent
 Working for: YourCompany | SaaS
-Current model: claude-3-5-sonnet + perplexity sonar-pro
 
 Commands:
   d   Run daily tasks (autonomous BD work)
@@ -144,15 +137,12 @@ Commands:
 
 ## Architecture
 
-BD Agent uses a **dual-AI engine**:
-
-- **Claude** (Anthropic) — Orchestration, planning, validation, and synthesis
-- **Perplexity sonar-pro** — Deep research with real-time web citations
+Pepo uses a **multi-stage agentic loop** with deep research capabilities:
 
 ```
 1. ONBOARDING    →  Learns your business context (saved locally)
 2. PLANNING      →  Breaks tasks into evidence-gathering steps
-3. EXECUTION     →  Runs tools (Perplexity research, company search, signals)
+3. EXECUTION     →  Runs research tools (company search, signals, contacts)
 4. VALIDATION    →  Checks evidence quality (URL required for every claim)
 5. SYNTHESIS     →  Produces actionable results
 ```
@@ -187,7 +177,7 @@ Signal {
 
 | Tool | What It Does |
 |------|-------------|
-| `deep_research` | General research via Perplexity sonar-pro |
+| `deep_research` | Deep research with real-time citations |
 | `search_companies_by_criteria` | Find ICP-matching companies |
 | `find_hiring_signals` | Discover job postings as buying signals |
 | `find_funding_signals` | Track funding announcements |
@@ -232,8 +222,8 @@ biz-dev-agent/
 ├── src/bd_agent/
 │   ├── agent.py          # Core agentic loop
 │   ├── onboarding.py     # Business context onboarding
-│   ├── model.py          # Claude/OpenAI LLM interface
-│   ├── tools.py          # 11 Perplexity-powered research tools
+│   ├── model.py          # LLM interface
+│   ├── tools.py          # 11 research tools
 │   ├── prompts.py        # System prompts
 │   ├── schemas.py        # Data models (Account, Contact, Signal, etc.)
 │   └── cli.py            # Interactive CLI
@@ -247,13 +237,6 @@ biz-dev-agent/
 ```
 
 ---
-
-## Cost Estimate
-
-Typical daily run:
-- Claude calls: ~$0.50–1.50
-- Perplexity sonar-pro: ~$0.50–2.00
-- **Total: ~$1–3.50/day for full BD coverage**
 
 ## License
 

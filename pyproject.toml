@@ -1,7 +1,7 @@
 [project]
 name = "bd-agent"
 version = "0.2.0"
-description = "BD Agent - Your AI Business Development Agent powered by Claude + Perplexity"
+description = "Pepo - Your AI Business Development Agent"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -21,6 +21,7 @@ dependencies = [
 ]
 
 [project.scripts]
+pepo = "bd_agent.cli:main"
 bd-agent = "bd_agent.cli:main"
 
 [build-system]
