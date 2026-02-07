@@ -1,5 +1,5 @@
 """
-Onboarding flow for BD Agent.
+Onboarding flow for Pepo.
 
 Collects business context so the agent understands:
 - What your company does
@@ -65,11 +65,11 @@ def run_onboarding() -> BusinessProfile:
     """Interactive onboarding to collect business context"""
 
     console.print(Panel(
-        "[bold cyan]Let's set up your BD Agent[/bold cyan]\n\n"
+        "[bold blue]Let's set up Pepo[/bold blue]\n\n"
         "I need to understand your business so I can find the right\n"
         "prospects, track competitors, and surface insights for you.\n\n"
         "[dim]This takes about 2 minutes. Your answers are saved locally.[/dim]",
-        border_style="cyan"
+        border_style="blue"
     ))
 
     console.print()
@@ -175,7 +175,7 @@ def run_onboarding() -> BusinessProfile:
 
 def display_profile(profile: BusinessProfile):
     """Display the business profile"""
-    table = Table(title="Your Business Profile", show_header=False, border_style="cyan")
+    table = Table(title="Your Business Profile", show_header=False, border_style="blue")
     table.add_column("Field", style="bold")
     table.add_column("Value")
 
@@ -309,13 +309,13 @@ def display_daily_plan(plan: DailyPlan):
     """Display the daily plan"""
 
     console.print(Panel(
-        "[bold cyan]Your Daily BD Plan[/bold cyan]\n\n"
+        "[bold blue]Your Daily Pepo Plan[/bold blue]\n\n"
         "Here's what I'll be doing for you on a daily basis:",
-        border_style="cyan"
+        border_style="blue"
     ))
 
-    table = Table(show_header=True, border_style="cyan")
-    table.add_column("#", style="cyan", width=3)
+    table = Table(show_header=True, border_style="blue")
+    table.add_column("#", style="blue", width=3)
     table.add_column("Task", style="bold")
     table.add_column("Schedule", justify="center")
     table.add_column("Status", justify="center")

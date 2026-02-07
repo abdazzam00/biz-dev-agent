@@ -1,4 +1,4 @@
-"""BD Agent - Autonomous Business Development Agent"""
+"""Pepo - Your AI Business Development Agent"""
 
 from bd_agent.agent import BDAgent
 from bd_agent.schemas import (

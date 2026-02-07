@@ -46,11 +46,11 @@ def show_progress(description: str, completion_message: str):
 
 class BDAgent:
     """
-    BD Agent - Autonomous Business Development Agent
+    Pepo - Your AI Business Development Agent
 
     Autonomous agent that:
     1. Plans BD research tasks
-    2. Executes with evidence collection via Perplexity + Claude
+    2. Executes with evidence collection
     3. Validates data quality
     4. Produces verified, cited results
     """
@@ -96,7 +96,7 @@ class BDAgent:
             llm_summary=f"Starting {workflow_spec.goal.value} workflow"
         ))
 
-        console.print(f"\n[bold cyan]BD Agent Workflow:[/bold cyan] {workflow_spec.goal.value}")
+        console.print(f"\n[bold blue]Pepo Workflow:[/bold blue] {workflow_spec.goal.value}")
         console.print(f"[dim]ICP: {workflow_spec.icp.industries}, {workflow_spec.icp.geo}[/dim]")
 
         if self.profile:
@@ -144,7 +144,7 @@ class BDAgent:
         Run a single daily task and return results.
         This is for the daily autonomous loop.
         """
-        console.print(f"\n[bold cyan]Running:[/bold cyan] {task.name}")
+        console.print(f"\n[bold blue]Running:[/bold blue] {task.name}")
         console.print(f"[dim]{task.description}[/dim]\n")
 
         # Use the appropriate tool based on task type
@@ -177,8 +177,8 @@ class BDAgent:
             preview = output[:500] + "..." if len(output) > 500 else output
             console.print(Panel(
                 preview,
-                title=f"[cyan]{task.name}[/cyan]",
-                border_style="cyan"
+                title=f"[blue]{task.name}[/blue]",
+                border_style="blue"
             ))
 
             # Log to scratchpad
@@ -317,8 +317,8 @@ Every task must produce data with SOURCE URLS."""
         preview = output[:300] + "..." if len(output) > 300 else output
         console.print(Panel(
             preview,
-            title=f"[cyan]{tool_call.tool_name}[/cyan] ({task.evidence_count} URLs)",
-            border_style="cyan"
+            title=f"[blue]{tool_call.tool_name}[/blue] ({task.evidence_count} URLs)",
+            border_style="blue"
         ))
 
     def _extract_urls_from_output(self, output: str) -> List[str]:
@@ -465,7 +465,7 @@ Is this complete with evidence?"""
     def display_tasks(self, tasks: List[Task]):
         """Display planned tasks"""
         table = Table(title="Planned Tasks", show_header=True)
-        table.add_column("ID", style="cyan")
+        table.add_column("ID", style="blue")
         table.add_column("Description")
         table.add_column("Status", justify="center")
 

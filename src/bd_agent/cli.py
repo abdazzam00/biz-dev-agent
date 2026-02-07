@@ -18,26 +18,27 @@ from rich.table import Table
 
 console = Console()
 
-BD_AGENT_ASCII = (
-    "[bold red] ____  ____  [/bold red][bold cyan]     _                    _[/bold cyan]\n"
-    "[bold red]| __ )|  _ \\ [/bold red][bold cyan]    / \\   __ _  ___ _ __ | |_[/bold cyan]\n"
-    "[bold red]|  _ \\| | | |[/bold red][bold cyan]   / _ \\ / _` |/ _ \\ '_ \\| __|[/bold cyan]\n"
-    "[bold red]| |_) | |_| |[/bold red][bold cyan]  / ___ \\ (_| |  __/ | | | |_[/bold cyan]\n"
-    "[bold red]|____/|____/ [/bold red][bold cyan] /_/   \\_\\__, |\\___|_| |_|\\__|[/bold cyan]\n"
-    "[bold cyan]                      |___/[/bold cyan]"
+PEPO_ASCII = (
+    "[bold blue] ____  _____ ____   ___  [/bold blue]\n"
+    "[bold blue]|  _ \\| ____|  _ \\ / _ \\ [/bold blue]\n"
+    "[bold blue]| |_) |  _| | |_) | | | |[/bold blue]\n"
+    "[bold blue]|  __/| |___| |__/| |_| |[/bold blue]\n"
+    "[bold blue]|_|   |_____|_|    \\___/ [/bold blue]"
 )
 
 
 def print_intro(profile: Optional[BusinessProfile] = None):
     """Print welcome message with ASCII art"""
-    console.print(BD_AGENT_ASCII)
+    console.print(PEPO_ASCII)
 
-    subtitle = "[bold cyan]Your AI Business Development Agent[/bold cyan]"
+    subtitle = "[bold blue]Your AI Business Development Agent[/bold blue]"
     if profile:
         subtitle += f"\n[dim]Working for: {profile.company_name} | {profile.industry}[/dim]"
 
     intro = f"""{subtitle}
-Current model: [cyan]claude-3-5-sonnet[/cyan] + [cyan]perplexity sonar-pro[/cyan]
+
+[bold]Pepo is an autonomous Business Development agent that thinks, plans,
+and learns as it works.[/bold]
 
 [bold]What I do every day:[/bold]
   >> Find new prospects matching your ICP
@@ -49,7 +50,7 @@ Current model: [cyan]claude-3-5-sonnet[/cyan] + [cyan]perplexity sonar-pro[/cyan
 
 [bold]Core principle:[/bold] Evidence first. Every claim has a source URL.
 """
-    console.print(Panel(intro.strip(), border_style="cyan"))
+    console.print(Panel(intro.strip(), border_style="blue"))
 
 
 def get_example_workflows() -> List[WorkflowSpec]:
@@ -111,7 +112,7 @@ def get_example_workflows() -> List[WorkflowSpec]:
 def display_examples(examples: List[WorkflowSpec]):
     """Display example workflows"""
     table = Table(title="Example Workflows")
-    table.add_column("#", style="cyan")
+    table.add_column("#", style="blue")
     table.add_column("Goal")
     table.add_column("Industry")
     table.add_column("Signals")
@@ -133,7 +134,7 @@ def run_workflow(workflow: WorkflowSpec, profile: Optional[BusinessProfile] = No
     try:
         result = agent.run(workflow)
         console.print(f"\n[green]Workflow complete![/green]")
-        console.print(f"Scratchpad: [cyan]{result.scratchpad_file}[/cyan]")
+        console.print(f"Scratchpad: [blue]{result.scratchpad_file}[/blue]")
         return result
     except KeyboardInterrupt:
         console.print("\n[yellow]Workflow cancelled[/yellow]")
@@ -160,7 +161,7 @@ def run_daily_tasks(profile: BusinessProfile):
     agent = BDAgent(max_steps=30, max_steps_per_task=8, profile=profile)
 
     enabled_tasks = [t for t in plan.tasks if t.enabled]
-    console.print(f"\n[bold cyan]Running {len(enabled_tasks)} daily tasks...[/bold cyan]\n")
+    console.print(f"\n[bold blue]Running {len(enabled_tasks)} daily tasks...[/bold blue]\n")
 
     results = []
     for i, task in enumerate(enabled_tasks, 1):
@@ -175,7 +176,7 @@ def run_daily_tasks(profile: BusinessProfile):
 
 def custom_workflow_builder(profile: Optional[BusinessProfile] = None):
     """Interactive workflow builder"""
-    console.print("\n[bold cyan]Build Custom Workflow[/bold cyan]\n")
+    console.print("\n[bold blue]Build Custom Workflow[/bold blue]\n")
 
     goal_map = {
         "1": WorkflowGoal.LEAD_LIST,
@@ -244,10 +245,10 @@ def main():
     profile = load_profile()
 
     if not profile:
-        console.print(BD_AGENT_ASCII)
+        console.print(PEPO_ASCII)
         console.print("[bold]Welcome! Let's get you set up.[/bold]\n")
 
-        if Confirm.ask("Run onboarding to teach BD Agent about your business?", default=True):
+        if Confirm.ask("Run onboarding to teach Pepo about your business?", default=True):
             profile = run_onboarding()
 
             # Generate daily plan
@@ -275,10 +276,10 @@ def main():
     display_examples(examples)
 
     while True:
-        choice = Prompt.ask("\n[bold cyan]bd-agent[/bold cyan]", default="d")
+        choice = Prompt.ask("\n[bold blue]pepo[/bold blue]", default="d")
 
         if choice.lower() in ['q', 'quit', 'exit']:
-            console.print("\n[cyan]BD Agent signing off.[/cyan]\n")
+            console.print("\n[blue]Pepo signing off.[/blue]\n")
             break
 
         elif choice.lower() == 'd':
