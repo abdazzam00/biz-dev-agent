@@ -6,7 +6,7 @@
 |_|   |_____|_|    \___/
 ```
 
-**Pepo is an autonomous Business Development agent that thinks, plans, and learns as it works.** It finds prospects, tracks competitors, surfaces market insights, scouts partnerships, and prepares outreach — all backed by evidence with source URLs. Think Claude Code, but built just for business development work.
+**Pepo is an autonomous Business Development agent that thinks, plans, and learns as it works.** It finds prospects, tracks competitors, surfaces market insights, scouts partnerships, and prepares outreach. Think Claude Code, but built just for business development work.
 
 ## What It Does
 
@@ -21,8 +21,6 @@
 | **Market Signals** | Tracks buying triggers (M&A, regulation, leadership changes) |
 | **Partnership Scouting** | Identifies integration and co-marketing opportunities |
 | **Outreach Prep** | Prepares personalized talking points for top prospects |
-
-**Core principle:** Evidence first. Every claim has a source URL. No hallucinations.
 
 ---
 

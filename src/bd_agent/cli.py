@@ -47,8 +47,6 @@ and learns as it works.[/bold]
   ~~ Track buying triggers (funding, hiring, launches)
   <> Scout partnership opportunities
   !! Prepare personalized outreach
-
-[bold]Core principle:[/bold] Evidence first. Every claim has a source URL.
 """
     console.print(Panel(intro.strip(), border_style="blue"))
 
