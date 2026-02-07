@@ -1,0 +1,34 @@
+{
+  "goal": "account_briefs",
+  "icp": {
+    "industries": ["mental health", "women's health", "telemedicine"],
+    "geo": ["US"],
+    "stage": ["seed", "series_a", "series_b"],
+    "company_size": {
+      "min": 10,
+      "max": 500
+    }
+  },
+  "signals": [
+    {
+      "type": "hiring",
+      "query": "nutritionist OR dietitian OR therapist OR counselor"
+    },
+    {
+      "type": "product_launch",
+      "within_days": 180
+    },
+    {
+      "type": "funding",
+      "within_days": 365
+    }
+  ],
+  "constraints": {
+    "max_accounts": 25,
+    "must_have_verified_email": false,
+    "exclude_keywords": ["pharmaceutical", "medical device"]
+  },
+  "deliverable": {
+    "format": "markdown"
+  }
+}
