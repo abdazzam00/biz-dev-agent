@@ -1,35 +1,41 @@
-# BD Agent 🎯
+# BD Agent
 
-**Business Development Agent** - An autonomous BD research agent built on the Dexter architecture. Think "Dexter for GTM".
+**Your AI Business Development Agent** - An autonomous agent that does BD research 24/7 so you don't have to.
 
-BD Agent autonomously finds high-quality leads with **verified information** and **evidence for every claim**. No hallucinations. Every company, contact, and signal is backed by source URLs.
+BD Agent learns your business during onboarding, then autonomously finds prospects, tracks competitors, surfaces insights, and prepares outreach - all backed by evidence with source URLs.
 
-## What It Does (Concretely)
+## What It Does
 
-**Input:**
+**On Day 1:** Onboarding - learns your business, ICP, competitors, and positioning.
+
+**Every Day After:**
+- **Find New Prospects** - Discovers companies matching your ICP with buying signals
+- **Competitor Watch** - Monitors competitor funding, hiring, product launches, and news
+- **Product Insights** - Surfaces market trends and customer pain points
+- **Market Signals** - Tracks buying triggers (M&A, regulation, leadership changes)
+- **Partnership Scouting** - Identifies integration and co-marketing opportunities
+- **Outreach Prep** - Prepares personalized talking points for top prospects
+
+**Everything cited with source URLs. No hallucinations.**
+
+## Architecture
+
+BD Agent uses a **dual-AI engine**:
+
+- **Claude** (Anthropic) - Orchestration, planning, validation, and synthesis
+- **Perplexity sonar-pro** - Deep research with real-time web citations
+
+### How It Works
+
 ```
-"Find 40 seed–Series A fintechs hiring SDRs in NYC, identify the VP Sales / Head of Growth,
-find their email, and draft a 3-line opener referencing a recent signal."
+1. ONBOARDING    -> Learns your business context (saved locally)
+2. PLANNING      -> Breaks tasks into evidence-gathering steps
+3. EXECUTION     -> Runs tools (Perplexity research, company search, signals)
+4. VALIDATION    -> Checks evidence quality (URL required for every claim)
+5. SYNTHESIS     -> Produces actionable results
 ```
 
-**Output:**
-- ✅ Ranked list of accounts + contacts
-- ✅ Evidence links for each signal (funding, hiring, product launch, etc.)
-- ✅ Draft outreach + suggested next action
-- ✅ Trace file showing exactly how it got there (so you can trust/debug it)
-
-## Core Architecture (from Dexter)
-
-BD Agent mirrors Dexter's proven pattern: **task planning → autonomous execution → self-validation → refinement loop**.
-
-### 1. **Multi-Agent System**
-
-- **Planner Agent**: Turns GTM asks into evidence-gathering checklists
-- **Executor Agent**: Calls tools (search, enrichment, verification)
-- **Validator Agent**: Enforces "no data without source URL" rule
-- **Synthesizer Agent**: Produces final output with recommended actions
-
-### 2. **Evidence-First Data Model**
+### Evidence-First Data Model
 
 Every object requires proof:
 
@@ -53,71 +59,62 @@ Signal {
 }
 ```
 
-**Rule:** No score without at least 1 source URL.
-
-### 3. **Safety Rails**
-
-- Loop detection (identical to Dexter)
-- Step limits (global + per-task)
-- Evidence validation gates
-- Cost tracking
-
-### 4. **Scratchpad Logging**
-
-Every run logs to `.bd-agent/scratchpad/*.jsonl`:
-
-```jsonl
-{"type":"init","timestamp":"...","llm_summary":"Starting lead_list workflow"}
-{"type":"tool_result","tool_name":"search_companies_by_criteria","args":{...},"evidence_urls":[...]}
-{"type":"validation","done":true,"has_evidence":true}
-{"type":"final","llm_summary":"40 accounts, 35 verified contacts"}
-```
-
-## Installation
-
-### Prerequisites
-
-- Python 3.10+
-- [uv](https://github.com/astral-sh/uv) package manager
-- Claude API key OR OpenAI API key
-- Serper API key (free tier: 2,500 searches/month)
-
-### Quick Start
+## Quick Start
 
 ```bash
 # Clone
-git clone https://github.com/yourusername/bd-agent.git
-cd bd-agent
+git clone https://github.com/abdazzam00/biz-dev-agent.git
+cd biz-dev-agent
 
 # Install
-uv sync
+pip install -e .
 
 # Configure
 cp env.example .env
-# Edit .env and add your API keys:
-# - ANTHROPIC_API_KEY or OPENAI_API_KEY
-# - SERPER_API_KEY (get free at https://serper.dev)
+# Add your API keys to .env:
+#   ANTHROPIC_API_KEY or OPENAI_API_KEY
+#   PERPLEXITY_API_KEY
 
 # Run
-uv run bd-agent
+bd-agent
 ```
+
+On first run, BD Agent walks you through onboarding to learn your business. Then it proposes a daily task plan tailored to your needs.
 
 ## Usage
 
-### Interactive Mode
+### Interactive CLI
 
 ```bash
-uv run bd-agent
+bd-agent
 ```
 
-Choose from example workflows or build your own.
+```
+ ____  ____       _                    _
+| __ )|  _ \     / \   __ _  ___ _ __ | |_
+|  _ \| | | |   / _ \ / _` |/ _ \ '_ \| __|
+| |_) | |_| |  / ___ \ (_| |  __/ | | | |_
+|____/|____/  /_/   \_\__, |\___|_| |_|\__|
+                      |___/
+
+Your AI Business Development Agent
+Current model: claude-3-5-sonnet + perplexity sonar-pro
+
+Commands:
+  d   Run daily tasks (autonomous BD work)
+  1-3 Run example workflow
+  c   Build custom workflow
+  f   Load workflow from JSON file
+  p   View/edit business profile
+  o   Re-run onboarding
+  q   Quit
+```
 
 ### Programmatic Usage
 
 ```python
 from bd_agent import BDAgent, WorkflowSpec, WorkflowGoal, ICP, Signal, SignalType
 
-# Define workflow
 workflow = WorkflowSpec(
     goal=WorkflowGoal.LEAD_LIST,
     icp=ICP(
@@ -128,208 +125,65 @@ workflow = WorkflowSpec(
     signals=[
         Signal(type=SignalType.HIRING, query="SDR OR sales"),
         Signal(type=SignalType.FUNDING, within_days=365)
-    ],
-    constraints=Constraints(max_accounts=40)
+    ]
 )
 
-# Run
 agent = BDAgent()
 result = agent.run(workflow)
-
-# Access results
-print(f"Found {len(result.accounts)} accounts")
-print(f"{result.verified_contacts_count()} verified contacts")
-print(f"Scratchpad: {result.scratchpad_file}")
 ```
 
-### JSON Workflow Files
+## Tools (11 total)
 
-```bash
-# Create workflow.json
-{
-  "goal": "lead_list",
-  "icp": {
-    "industries": ["mental health", "women's health"],
-    "geo": ["US"],
-    "stage": ["seed", "series_a"],
-    "company_size": {"min": 10, "max": 200}
-  },
-  "signals": [
-    {"type": "hiring", "query": "nutritionist OR dietitian"},
-    {"type": "funding", "within_days": 365}
-  ],
-  "constraints": {
-    "max_accounts": 50,
-    "must_have_verified_email": false,
-    "exclude_keywords": ["agency", "consulting"]
-  },
-  "deliverable": {
-    "format": "csv"
-  }
-}
-
-# Run it
-uv run bd-agent  # Then select option 5 and provide path
-```
-
-## Workflow Types
-
-### 1. Lead List
-Find companies + contacts matching ICP with verified signals
-
-**Use for:** Building outbound lists, prospecting, account discovery
-
-### 2. Account Briefs
-Deep research on specific accounts with recent signals
-
-**Use for:** Account planning, exec briefings, strategic research
-
-### 3. Competitor Moves
-Track competitor signals (funding, launches, hiring)
-
-**Use for:** Competitive intelligence, market monitoring
-
-### 4. Outreach (coming soon)
-Draft personalized outreach referencing real signals
-
-**Use for:** Email sequences, LinkedIn messages, call prep
-
-## Tools (The GTM Toolbelt)
-
-BD Agent has 9 core tools:
-
-1. **web_search** - General web search with evidence URLs
-2. **search_companies_by_criteria** - Find ICP-matching companies
-3. **find_hiring_signals** - Discover hiring postings
-4. **find_funding_signals** - Track fundraising announcements
-5. **find_company_contacts** - Identify decision-makers
-6. **verify_email** - Email validation (integrate Hunter.io for production)
-7. **enrich_company** - Company firmographics
-8. **search_news** - Recent company news
-9. **perplexity_search** - Use Perplexity for cited research (optional)
-
-Each tool **returns URLs** for evidence. No guessing.
-
-## What Makes This Different
-
-### ❌ Traditional Tools
-- Return unverified data
-- Hallucinate emails
-- No source attribution
-- Black box operation
-
-### ✅ BD Agent
-- Every claim has a source URL
-- Email verification required
-- Full transparency via scratchpad
-- Validates its own work
+| Tool | What It Does |
+|------|-------------|
+| `deep_research` | General research via Perplexity sonar-pro |
+| `search_companies_by_criteria` | Find ICP-matching companies |
+| `find_hiring_signals` | Discover job postings as buying signals |
+| `find_funding_signals` | Track funding announcements |
+| `find_company_contacts` | Identify decision-makers |
+| `verify_email` | Email format validation |
+| `enrich_company` | Company firmographics |
+| `search_news` | Recent company news |
+| `find_competitors` | Competitor analysis |
+| `find_product_insights` | Market trends and insights |
+| `find_partnership_opportunities` | Partnership scouting |
 
 ## Project Structure
 
 ```
-bd-agent/
+biz-dev-agent/
 ├── src/bd_agent/
-│   ├── agent.py          # Main orchestration (like Dexter)
-│   ├── model.py          # LLM interface
-│   ├── tools.py          # 9 GTM research tools
-│   ├── prompts.py        # Evidence-focused system prompts
-│   ├── schemas.py        # Workflow contract + data models
+│   ├── agent.py          # Core agentic loop
+│   ├── onboarding.py     # Business context onboarding
+│   ├── model.py          # Claude/OpenAI LLM interface
+│   ├── tools.py          # 11 Perplexity-powered research tools
+│   ├── prompts.py        # System prompts
+│   ├── schemas.py        # Data models (Account, Contact, Signal, etc.)
 │   └── cli.py            # Interactive CLI
-├── .bd-agent/scratchpad/ # JSONL logs (auto-created)
+├── .bd-agent/            # Local data (auto-created)
+│   ├── profile.json      # Your business profile
+│   ├── daily_plan.json   # Daily task plan
+│   └── scratchpad/       # JSONL run logs
 ├── examples/             # Example workflows
 ├── pyproject.toml
-├── env.example
-└── README.md
+└── env.example
 ```
 
-## Evaluation (Like Dexter's Eval Suite)
+## API Keys Required
 
-Create eval sets with **hard checks**:
-
-```python
-eval_metrics = {
-    "% emails verified": 0.85,
-    "% contacts have evidence": 1.0,
-    "% accounts match ICP": 0.90,
-    "duplication rate": 0.05,
-    "avg cost per run": "$2.50"
-}
-```
-
-Not just LLM-as-judge - **quantifiable quality**.
-
-## Roadmap
-
-### MVP (Current)
-- [x] Core agent architecture
-- [x] Evidence-first data model
-- [x] Scratchpad logging
-- [x] 9 essential tools
-- [x] Interactive CLI
-- [x] 3 workflow types
-
-### Next
-- [ ] Email verification API integration (Hunter.io)
-- [ ] Company enrichment API (Clearbit/Apollo)
-- [ ] CSV/Google Sheets export
-- [ ] Evaluation harness
-- [ ] Continuous monitoring (daily workflows)
-- [ ] CRM integration (HubSpot/Salesforce)
-
-### Future
-- [ ] Outreach generation
-- [ ] Sequence automation
-- [ ] Pipeline cleanup
-- [ ] Account scoring models
-
-## Integration Recommendations
-
-### For Production
-
-1. **Email Verification**: Hunter.io, NeverBounce, or ZeroBounce
-2. **Company Data**: Clearbit, Apollo, or RocketReach
-3. **Contact Data**: LinkedIn Sales Navigator API (if compliant)
-4. **CRM**: HubSpot or Salesforce write-back
-
-### Claude Code Setup
-
-This project is **Claude Code-ready**. To use with Claude Code:
-
-```bash
-# From project root
-claude-code
-
-# Then in Claude Code:
-"Install dependencies and run the example fintech workflow"
-"Add a new tool for finding product launch signals"
-"Debug why Task 3 didn't find emails"
-```
+| Key | Required | What For |
+|-----|----------|----------|
+| `ANTHROPIC_API_KEY` | Yes (or OpenAI) | Claude for orchestration |
+| `PERPLEXITY_API_KEY` | Yes | Deep research with citations |
+| `OPENAI_API_KEY` | Alternative | Can use instead of Claude |
 
 ## Cost Estimate
 
-Typical run (40 accounts):
-- LLM calls: ~$0.50-1.50
-- Web search: Free (Serper free tier)
-- Total: **< $2 per workflow**
-
-With premium APIs (Hunter, Clearbit):
-- Add ~$0.10-0.30 per verified contact
-- Still **< $15 for 40 high-quality leads**
-
-## Inspired By
-
-- [Dexter](https://github.com/virattt/dexter) by [@virattt](https://twitter.com/virattt) - The financial research agent that proved autonomous agents can be production-grade with the right architecture.
+Typical daily run:
+- Claude calls: ~$0.50-1.50
+- Perplexity sonar-pro: ~$0.50-2.00
+- **Total: ~$1-3.50/day for full BD coverage**
 
 ## License
 
 MIT
-
-## Support
-
-- Open an issue on GitHub
-- Check the scratchpad logs for debugging
-- Review the Dexter project for similar patterns
-
----
-
-**Built for BD teams who want AI-powered research they can actually trust.** 🎯

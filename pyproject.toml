@@ -1,7 +1,7 @@
 [project]
 name = "bd-agent"
-version = "0.1.0"
-description = "An autonomous Business Development agent - Dexter for GTM"
+version = "0.2.0"
+description = "BD Agent - Your AI Business Development Agent powered by Claude + Perplexity"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any, Literal
 from datetime import datetime
 from enum import Enum
@@ -23,10 +23,71 @@ class SignalType(str, Enum):
     EXPANSION = "expansion"
 
 
+class DailyTaskType(str, Enum):
+    """Daily recurring tasks the BD agent performs"""
+    PROSPECT_DISCOVERY = "prospect_discovery"
+    COMPETITOR_WATCH = "competitor_watch"
+    PRODUCT_INSIGHTS = "product_insights"
+    MARKET_SIGNALS = "market_signals"
+    PARTNERSHIP_SCOUTING = "partnership_scouting"
+    OUTREACH_PREP = "outreach_prep"
+
+
 class CompanySize(BaseModel):
     """Company size constraints"""
     min: Optional[int] = None
     max: Optional[int] = None
+
+
+class BusinessProfile(BaseModel):
+    """
+    Business context gathered during onboarding.
+    This is what the agent learns about YOUR business to do its job.
+    """
+    company_name: str = Field(description="Your company name")
+    website: Optional[str] = Field(default=None, description="Your company website")
+    industry: str = Field(description="Your industry/vertical")
+    product_description: str = Field(description="What your product/service does")
+    target_customer: str = Field(description="Who you sell to (e.g., 'Series A-C SaaS companies')")
+    value_proposition: str = Field(description="Your key value prop in one sentence")
+    competitors: List[str] = Field(default_factory=list, description="Known competitors")
+    target_titles: List[str] = Field(
+        default_factory=lambda: ["VP Sales", "Head of Growth", "CRO", "CEO"],
+        description="Decision-maker titles you target"
+    )
+    target_industries: List[str] = Field(default_factory=list, description="Industries you sell into")
+    target_regions: List[str] = Field(default_factory=lambda: ["US"], description="Geographic focus")
+    pain_points: List[str] = Field(default_factory=list, description="Problems your product solves")
+    differentiators: List[str] = Field(default_factory=list, description="What makes you different")
+    current_clients: List[str] = Field(default_factory=list, description="Example clients (for lookalike)")
+    notes: Optional[str] = Field(default=None, description="Any additional context")
+    onboarded_at: datetime = Field(default_factory=datetime.now)
+
+    def summary(self) -> str:
+        """One-paragraph summary for prompts"""
+        return (
+            f"{self.company_name} is a {self.industry} company. "
+            f"Product: {self.product_description}. "
+            f"Target: {self.target_customer}. "
+            f"Value prop: {self.value_proposition}. "
+            f"Competitors: {', '.join(self.competitors) if self.competitors else 'Not specified'}."
+        )
+
+
+class DailyTask(BaseModel):
+    """A daily recurring task the agent should perform"""
+    type: DailyTaskType
+    name: str
+    description: str
+    enabled: bool = True
+    schedule: str = Field(default="daily", description="daily, weekdays, weekly")
+    last_run: Optional[datetime] = None
+
+
+class DailyPlan(BaseModel):
+    """The agent's proposed daily plan"""
+    tasks: List[DailyTask]
+    reasoning: Optional[str] = None
 
 
 class ICP(BaseModel):
@@ -47,9 +108,8 @@ class Signal(BaseModel):
     date: Optional[datetime] = None
     url: Optional[str] = None
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
-    
+
     def has_evidence(self) -> bool:
-        """Check if signal has proper evidence"""
         return self.url is not None and self.snippet is not None
 
 
@@ -65,13 +125,13 @@ class Deliverable(BaseModel):
     """Output format specification"""
     format: Literal["csv", "json", "markdown"] = "csv"
     columns: List[str] = Field(default_factory=lambda: [
-        "company", "domain", "signal", "source_url", 
+        "company", "domain", "signal", "source_url",
         "contact_name", "title", "email", "confidence"
     ])
 
 
 class WorkflowSpec(BaseModel):
-    """The main workflow contract - users provide this"""
+    """The main workflow contract"""
     goal: WorkflowGoal
     icp: ICP
     signals: List[Signal] = Field(default_factory=list)
@@ -85,16 +145,14 @@ class Account(BaseModel):
     domain: str
     icp_fit_score: float = Field(ge=0.0, le=1.0)
     signals: List[Signal] = Field(default_factory=list)
-    sources: List[str] = Field(default_factory=list, description="URLs proving this account exists/matches")
-    
-    # Firmographics
+    sources: List[str] = Field(default_factory=list)
+
     industry: Optional[str] = None
     employee_count: Optional[int] = None
     funding_stage: Optional[str] = None
     location: Optional[str] = None
-    
+
     def has_verified_signals(self) -> bool:
-        """Check if account has at least one signal with evidence"""
         return any(s.has_evidence() for s in self.signals)
 
 
@@ -106,13 +164,12 @@ class Contact(BaseModel):
     linkedin: Optional[str] = None
     email: Optional[str] = None
     verification_status: Literal["unverified", "verified", "bounced", "catch_all"] = "unverified"
-    sources: List[str] = Field(default_factory=list, description="URLs proving this person and role")
+    sources: List[str] = Field(default_factory=list)
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
-    
+
     def is_verified(self) -> bool:
-        """Check if contact has verified email and evidence"""
         return (
-            self.verification_status == "verified" 
+            self.verification_status == "verified"
             and len(self.sources) > 0
             and self.email is not None
         )
@@ -125,7 +182,7 @@ class Task(BaseModel):
     done: bool = False
     outputs: List[str] = Field(default_factory=list)
     step_count: int = 0
-    evidence_count: int = 0  # Track evidence quality
+    evidence_count: int = 0
 
 
 class TaskList(BaseModel):
@@ -154,7 +211,7 @@ class ToolCall(BaseModel):
 
 
 class ScratchpadEntry(BaseModel):
-    """Log entry for debugging - similar to Dexter's scratchpad"""
+    """Log entry for debugging"""
     timestamp: datetime = Field(default_factory=datetime.now)
     type: Literal["init", "tool_call", "tool_result", "validation", "final"]
     tool_name: Optional[str] = None
@@ -173,11 +230,9 @@ class WorkflowResult(BaseModel):
     cost: Optional[float] = None
     duration_seconds: Optional[float] = None
     scratchpad_file: Optional[str] = None
-    
+
     def verified_contacts_count(self) -> int:
-        """Count contacts with verified emails"""
         return sum(1 for c in self.contacts if c.is_verified())
-    
+
     def accounts_with_signals_count(self) -> int:
-        """Count accounts with verified signals"""
         return sum(1 for a in self.accounts if a.has_verified_signals())
