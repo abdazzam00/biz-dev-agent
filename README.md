@@ -64,7 +64,19 @@ python3 --version
 
 ---
 
-## How to Install
+## Quick Install (one command)
+
+**macOS/Linux:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/abdazzam00/biz-dev-agent/main/install.sh | bash
+```
+
+This will clone the repo, create a virtual environment, install all dependencies, and set up your `.env` file. After it finishes, just add your API keys and run `bd-agent`.
+
+---
+
+## Manual Install
 
 **1. Clone the repository:**
 
