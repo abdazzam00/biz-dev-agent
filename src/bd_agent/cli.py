@@ -18,15 +18,14 @@ from rich.table import Table
 
 console = Console()
 
-BD_AGENT_ASCII = r"""
-[bold cyan]
- ____  ____       _                    _
-| __ )|  _ \     / \   __ _  ___ _ __ | |_
-|  _ \| | | |   / _ \ / _` |/ _ \ '_ \| __|
-| |_) | |_| |  / ___ \ (_| |  __/ | | | |_
-|____/|____/  /_/   \_\__, |\___|_| |_|\__|
-                      |___/
-[/bold cyan]"""
+BD_AGENT_ASCII = (
+    "[bold red] ____  ____  [/bold red][bold cyan]     _                    _[/bold cyan]\n"
+    "[bold red]| __ )|  _ \\ [/bold red][bold cyan]    / \\   __ _  ___ _ __ | |_[/bold cyan]\n"
+    "[bold red]|  _ \\| | | |[/bold red][bold cyan]   / _ \\ / _` |/ _ \\ '_ \\| __|[/bold cyan]\n"
+    "[bold red]| |_) | |_| |[/bold red][bold cyan]  / ___ \\ (_| |  __/ | | | |_[/bold cyan]\n"
+    "[bold red]|____/|____/ [/bold red][bold cyan] /_/   \\_\\__, |\\___|_| |_|\\__|[/bold cyan]\n"
+    "[bold cyan]                      |___/[/bold cyan]"
+)
 
 
 def print_intro(profile: Optional[BusinessProfile] = None):
