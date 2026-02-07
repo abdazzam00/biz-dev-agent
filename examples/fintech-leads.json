@@ -1,0 +1,40 @@
+{
+  "goal": "lead_list",
+  "icp": {
+    "industries": ["fintech", "payments"],
+    "geo": ["NYC", "San Francisco"],
+    "stage": ["seed", "series_a"],
+    "company_size": {
+      "min": 10,
+      "max": 200
+    }
+  },
+  "signals": [
+    {
+      "type": "hiring",
+      "query": "SDR OR sales development OR business development"
+    },
+    {
+      "type": "funding",
+      "within_days": 365
+    }
+  ],
+  "constraints": {
+    "max_accounts": 40,
+    "must_have_verified_email": false,
+    "exclude_keywords": ["agency", "consulting", "marketing agency"]
+  },
+  "deliverable": {
+    "format": "csv",
+    "columns": [
+      "company",
+      "domain",
+      "signal",
+      "source_url",
+      "contact_name",
+      "title",
+      "email",
+      "confidence"
+    ]
+  }
+}
