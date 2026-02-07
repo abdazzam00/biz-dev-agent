@@ -6,71 +6,79 @@ import json
 from datetime import datetime, timedelta
 
 
-@tool
-def web_search(query: str, num_results: int = 10) -> str:
+def _perplexity_query(query: str, system_prompt: str = "") -> dict:
     """
-    Search the web for information. Returns results with URLs for evidence.
-    
-    CRITICAL: This is the foundation tool. Every piece of data must trace back to a URL.
-    
-    Use for:
-    - Finding companies matching ICP criteria
-    - Discovering signals (hiring, funding, product launches)
-    - Researching competitors
-    - Finding contact information
-    
-    Args:
-        query: Search query
-        num_results: Number of results to return (default 10)
-        
-    Returns:
-        JSON string with search results including title, snippet, and URL
+    Core Perplexity API call used by most tools.
+    Uses sonar-pro for deep, cited research.
     """
-    serper_api_key = os.getenv("SERPER_API_KEY")
-    
-    if not serper_api_key:
-        return json.dumps({
-            "error": "SERPER_API_KEY not found",
-            "message": "Get a free key at https://serper.dev and add to .env",
+    api_key = os.getenv("PERPLEXITY_API_KEY")
+
+    if not api_key:
+        return {
+            "error": "PERPLEXITY_API_KEY not set",
+            "message": "Get your API key at https://www.perplexity.ai/settings/api",
             "results": []
-        })
-    
-    url = "https://google.serper.dev/search"
-    headers = {
-        'X-API-KEY': serper_api_key,
-        'Content-Type': 'application/json'
-    }
-    payload = {
-        'q': query,
-        'num': num_results
-    }
-    
+        }
+
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        url = "https://api.perplexity.ai/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": query})
+
+        payload = {
+            "model": "sonar-pro",
+            "messages": messages,
+            "return_citations": True,
+            "return_related_questions": False
+        }
+
+        response = requests.post(url, json=payload, headers=headers, timeout=60)
         response.raise_for_status()
         data = response.json()
-        
-        results = []
-        if 'organic' in data:
-            for item in data['organic']:
-                results.append({
-                    'title': item.get('title', ''),
-                    'snippet': item.get('snippet', ''),
-                    'url': item.get('link', ''),
-                    'date': item.get('date', '')
-                })
-        
-        return json.dumps({
-            'query': query,
-            'num_results': len(results),
-            'results': results
-        }, indent=2)
-        
+
+        answer = data["choices"][0]["message"]["content"]
+        citations = data.get("citations", [])
+
+        return {
+            "answer": answer,
+            "citations": citations,
+            "source": "perplexity_sonar_pro"
+        }
+
     except Exception as e:
-        return json.dumps({
-            'error': str(e),
-            'results': []
-        })
+        return {"error": str(e), "results": []}
+
+
+@tool
+def deep_research(query: str) -> str:
+    """
+    Deep research using Perplexity sonar-pro. Returns cited, factual answers.
+
+    This is the primary research tool. Use it for any question that needs
+    accurate, up-to-date information with source citations.
+
+    Args:
+        query: Research question or topic
+
+    Returns:
+        JSON string with answer and citation URLs
+    """
+    result = _perplexity_query(
+        query,
+        system_prompt=(
+            "You are a business development research assistant. "
+            "Provide detailed, factual answers with specific data points. "
+            "Include company names, funding amounts, employee counts, and dates when available."
+        )
+    )
+    return json.dumps(result, indent=2)
 
 
 @tool
@@ -82,111 +90,128 @@ def search_companies_by_criteria(
     max_employees: int = 10000
 ) -> str:
     """
-    Search for companies matching specific ICP criteria.
-    
+    Search for companies matching specific ICP criteria using Perplexity.
+
     Args:
         industry: Industry or vertical (e.g., "fintech", "health tech")
         location: Geographic location (e.g., "NYC", "San Francisco", "US")
         stage: Funding stage (e.g., "seed", "series A", "series B")
         min_employees: Minimum employee count
         max_employees: Maximum employee count
-        
+
     Returns:
         JSON string with companies and evidence URLs
     """
-    # Build search query
-    query_parts = [industry]
-    
+    query_parts = [f"List {industry} companies"]
+
     if stage:
-        query_parts.append(f"{stage} funding")
-    
+        query_parts.append(f"that have raised {stage} funding")
     if location:
-        query_parts.append(location)
-    
-    query_parts.append(f"{min_employees}-{max_employees} employees")
-    query_parts.append("companies")
-    
+        query_parts.append(f"based in {location}")
+    if min_employees > 0 or max_employees < 10000:
+        query_parts.append(f"with {min_employees}-{max_employees} employees")
+
     query = " ".join(query_parts)
-    
-    return web_search(query=query, num_results=15)
+    query += ". For each company, include: name, website, funding stage, employee count, and what they do."
+
+    result = _perplexity_query(query)
+    result["search_criteria"] = {
+        "industry": industry,
+        "location": location,
+        "stage": stage,
+        "size_range": f"{min_employees}-{max_employees}"
+    }
+    return json.dumps(result, indent=2)
 
 
 @tool
 def find_hiring_signals(company_name: str, role_keywords: str = "SDR,sales,growth") -> str:
     """
-    Find hiring signals for a company.
-    
+    Find hiring signals for a company using Perplexity.
+
     Args:
         company_name: Name of the company
         role_keywords: Comma-separated role keywords to search for
-        
+
     Returns:
         JSON string with hiring postings and URLs as evidence
     """
-    query = f"{company_name} hiring {role_keywords} site:linkedin.com OR site:greenhouse.io OR site:lever.co"
-    
-    return web_search(query=query, num_results=10)
+    query = (
+        f"Is {company_name} currently hiring for {role_keywords} roles? "
+        f"Check LinkedIn, job boards, and their careers page. "
+        f"Include links to any open positions found."
+    )
+
+    result = _perplexity_query(query)
+    result["company"] = company_name
+    result["signal_type"] = "hiring"
+    return json.dumps(result, indent=2)
 
 
 @tool
 def find_funding_signals(company_name: str, within_days: int = 365) -> str:
     """
     Find recent funding announcements for a company.
-    
+
     Args:
         company_name: Name of the company
         within_days: Look for funding within this many days
-        
+
     Returns:
         JSON string with funding news and evidence URLs
     """
-    # Calculate date range
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=within_days)
-    
-    query = f"{company_name} funding OR investment OR raised after:{start_date.strftime('%Y-%m-%d')}"
-    
-    return web_search(query=query, num_results=10)
+    cutoff = (datetime.now() - timedelta(days=within_days)).strftime("%B %Y")
+
+    query = (
+        f"Has {company_name} raised any funding since {cutoff}? "
+        f"Include: round type, amount raised, lead investors, valuation if known, and date."
+    )
+
+    result = _perplexity_query(query)
+    result["company"] = company_name
+    result["signal_type"] = "funding"
+    return json.dumps(result, indent=2)
 
 
 @tool
 def find_company_contacts(company_name: str, title: str) -> str:
     """
     Find contacts at a company with specific titles.
-    
-    IMPORTANT: Results must include LinkedIn URLs or other profile URLs as evidence.
-    
+
     Args:
         company_name: Name of the company
         title: Job title to search for (e.g., "VP Sales", "Head of Growth")
-        
+
     Returns:
         JSON string with contacts and profile URLs
     """
-    query = f"{title} at {company_name} site:linkedin.com/in"
-    
-    return web_search(query=query, num_results=10)
+    query = (
+        f"Who is the {title} at {company_name}? "
+        f"Include their full name, exact title, and LinkedIn profile URL if available."
+    )
+
+    result = _perplexity_query(query)
+    result["company"] = company_name
+    result["target_title"] = title
+    return json.dumps(result, indent=2)
 
 
 @tool
 def verify_email(email: str) -> str:
     """
     Verify if an email address is valid and deliverable.
-    
-    NOTE: In production, integrate with Hunter.io, NeverBounce, or ZeroBounce.
-    For MVP, this does basic format validation only.
-    
+    For MVP, does format validation. In production, integrate Hunter.io or similar.
+
     Args:
         email: Email address to verify
-        
+
     Returns:
         JSON string with verification status
     """
     import re
-    
-    # Basic email format validation
+
     email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    
+
     if not email or not re.match(email_pattern, email):
         return json.dumps({
             'email': email,
@@ -194,11 +219,10 @@ def verify_email(email: str) -> str:
             'deliverable': False,
             'reason': 'Invalid email format'
         })
-    
-    # Check for common disposable domains
+
     disposable_domains = ['tempmail.com', 'throwaway.email', '10minutemail.com']
     domain = email.split('@')[1].lower()
-    
+
     if domain in disposable_domains:
         return json.dumps({
             'email': email,
@@ -206,127 +230,146 @@ def verify_email(email: str) -> str:
             'deliverable': False,
             'reason': 'Disposable email domain'
         })
-    
-    # For MVP, return unverified but valid format
+
     return json.dumps({
         'email': email,
         'status': 'unverified',
         'deliverable': 'unknown',
-        'reason': 'Email verification requires API integration (Hunter.io, NeverBounce, etc.)',
-        'note': 'Format is valid. Integrate email verification API for production use.'
+        'reason': 'Format valid. Integrate Hunter.io/NeverBounce for production verification.'
     })
 
 
 @tool
 def enrich_company(domain: str) -> str:
     """
-    Get company information from domain.
-    
-    NOTE: In production, integrate with Clearbit, Apollo, or similar.
-    For MVP, uses web search.
-    
+    Get company information from domain using Perplexity.
+
     Args:
         domain: Company domain (e.g., "stripe.com")
-        
+
     Returns:
         JSON string with company info and evidence URLs
     """
-    query = f"site:{domain} OR {domain} company information employees funding"
-    
-    result = web_search(query=query, num_results=5)
-    
-    try:
-        data = json.loads(result)
-        
-        return json.dumps({
-            'domain': domain,
-            'source': 'web_search',
-            'note': 'For production, integrate Clearbit/Apollo for structured data',
-            'search_results': data.get('results', [])
-        }, indent=2)
-        
-    except:
-        return result
+    query = (
+        f"Tell me about the company at {domain}. "
+        f"Include: what they do, industry, founding year, headquarters, "
+        f"employee count, funding raised, key executives, and recent news."
+    )
+
+    result = _perplexity_query(query)
+    result["domain"] = domain
+    return json.dumps(result, indent=2)
 
 
 @tool
 def search_news(company_name: str, topic: str = "", within_days: int = 90) -> str:
     """
     Search for recent news about a company.
-    
+
     Args:
         company_name: Name of the company
         topic: Optional specific topic (e.g., "product launch", "partnership")
         within_days: Search news within this many days
-        
+
     Returns:
         JSON string with news articles and URLs
     """
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=within_days)
-    
-    query = f"{company_name} {topic} after:{start_date.strftime('%Y-%m-%d')}".strip()
-    
-    return web_search(query=query, num_results=10)
+    cutoff = (datetime.now() - timedelta(days=within_days)).strftime("%B %Y")
+    topic_str = f" related to {topic}" if topic else ""
+
+    query = (
+        f"What are the latest news and updates about {company_name}{topic_str} "
+        f"since {cutoff}? Include product launches, partnerships, expansions, and announcements."
+    )
+
+    result = _perplexity_query(query)
+    result["company"] = company_name
+    result["signal_type"] = "news"
+    return json.dumps(result, indent=2)
 
 
 @tool
-def perplexity_search(query: str) -> str:
+def find_competitors(company_name: str, industry: str = "") -> str:
     """
-    Use Perplexity AI for research (if API key is available).
-    
-    Perplexity is excellent for getting cited, factual answers with sources.
-    
+    Find and analyze competitors for a company.
+
     Args:
-        query: Research question
-        
+        company_name: Your company or a target company
+        industry: Industry context for better results
+
     Returns:
-        JSON string with answer and citations
+        JSON string with competitor analysis and citations
     """
-    api_key = os.getenv("PERPLEXITY_API_KEY")
-    
-    if not api_key:
-        return json.dumps({
-            'error': 'PERPLEXITY_API_KEY not set',
-            'fallback': 'Using regular web search instead',
-            'note': 'Get Perplexity API key at https://www.perplexity.ai/settings/api'
-        })
-    
-    try:
-        url = "https://api.perplexity.ai/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "model": "llama-3.1-sonar-small-128k-online",
-            "messages": [
-                {"role": "user", "content": query}
-            ]
-        }
-        
-        response = requests.post(url, json=payload, headers=headers, timeout=30)
-        response.raise_for_status()
-        data = response.json()
-        
-        answer = data['choices'][0]['message']['content']
-        citations = data.get('citations', [])
-        
-        return json.dumps({
-            'query': query,
-            'answer': answer,
-            'citations': citations,
-            'source': 'perplexity'
-        }, indent=2)
-        
-    except Exception as e:
-        # Fallback to web search
-        return web_search(query=query)
+    industry_str = f" in the {industry} space" if industry else ""
+
+    query = (
+        f"Who are the main competitors of {company_name}{industry_str}? "
+        f"For each competitor, include: name, website, what they do differently, "
+        f"recent funding, and any recent product moves or announcements."
+    )
+
+    result = _perplexity_query(query)
+    result["company"] = company_name
+    return json.dumps(result, indent=2)
 
 
-# List of all available tools
+@tool
+def find_product_insights(industry: str, topic: str = "trends") -> str:
+    """
+    Find product and market insights for an industry.
+
+    Args:
+        industry: Industry to research
+        topic: Specific topic (e.g., "trends", "pain points", "emerging tech")
+
+    Returns:
+        JSON string with insights and citations
+    """
+    query = (
+        f"What are the latest {topic} in the {industry} industry? "
+        f"Include specific examples, data points, and emerging opportunities. "
+        f"Focus on what's changed in the last 6 months."
+    )
+
+    result = _perplexity_query(query)
+    result["industry"] = industry
+    result["topic"] = topic
+    return json.dumps(result, indent=2)
+
+
+@tool
+def find_partnership_opportunities(
+    company_name: str,
+    industry: str = "",
+    partnership_type: str = "integration"
+) -> str:
+    """
+    Scout potential partnership opportunities.
+
+    Args:
+        company_name: Your company name
+        industry: Industry context
+        partnership_type: Type of partnership (integration, reseller, co-marketing)
+
+    Returns:
+        JSON string with partnership opportunities and citations
+    """
+    query = (
+        f"What companies would be good {partnership_type} partners for {company_name} "
+        f"{'in ' + industry if industry else ''}? "
+        f"Look for companies with complementary products, shared customer base, "
+        f"or recent partnership announcements in the space."
+    )
+
+    result = _perplexity_query(query)
+    result["company"] = company_name
+    result["partnership_type"] = partnership_type
+    return json.dumps(result, indent=2)
+
+
+# All available tools
 TOOLS = [
-    web_search,
+    deep_research,
     search_companies_by_criteria,
     find_hiring_signals,
     find_funding_signals,
@@ -334,13 +377,15 @@ TOOLS = [
     verify_email,
     enrich_company,
     search_news,
-    perplexity_search,
+    find_competitors,
+    find_product_insights,
+    find_partnership_opportunities,
 ]
 
 
 def get_tool_by_name(name: str):
     """Get a tool by its name"""
-    for tool in TOOLS:
-        if tool.name == name:
-            return tool
-    raise ValueError(f"Tool {name} not found")
+    for t in TOOLS:
+        if t.name == name:
+            return t
+    raise ValueError(f"Tool {name} not found. Available: {[t.name for t in TOOLS]}")
